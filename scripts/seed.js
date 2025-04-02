@@ -11,7 +11,7 @@ async function seed() {
       description: 'Powerful laptop with M1 Pro chip',
       category: 'Laptop',
       price: 1999.99,
-      imageUrl: 'https://via.placeholder.com/300x200?text=MacBook+Pro',
+      imageUrl: '/images/products/macbook.jpg',
     },
     {
       serialNumber: 'IPHONE-15-256GB',
@@ -20,7 +20,7 @@ async function seed() {
       description: 'Latest iPhone with stunning camera and performance',
       category: 'Phone',
       price: 1099.99,
-      imageUrl: 'https://via.placeholder.com/300x200?text=iPhone+15',
+      imageUrl: '/images/products/iphone.jpg',
     },
     {
       serialNumber: 'SAMSUNG-GALAXY-S23',
@@ -29,7 +29,7 @@ async function seed() {
       description: 'Flagship Android phone with incredible display',
       category: 'Phone',
       price: 899.99,
-      imageUrl: 'https://via.placeholder.com/300x200?text=Galaxy+S23',
+      imageUrl: '/images/products/samsung.jpg',
     },
     {
       serialNumber: 'DELL-XPS-13-2023',
@@ -38,7 +38,7 @@ async function seed() {
       description: 'Lightweight and powerful ultrabook',
       category: 'Laptop',
       price: 1399.99,
-      imageUrl: 'https://via.placeholder.com/300x200?text=Dell+XPS+13',
+      imageUrl: '/images/products/dell.jpg',
     },
   ]);
 
