@@ -1,0 +1,52 @@
+// scripts/seed.js
+const { db } = require('../src/db/index');
+const { products } = require('../src/db/schema');
+
+async function seed() {
+  await db.insert(products).values([
+    {
+      serialNumber: 'MBP-14-M1PRO',
+      name: 'MacBook Pro 14"',
+      brand: 'Apple',
+      description: 'Powerful laptop with M1 Pro chip',
+      category: 'Laptop',
+      price: 1999.99,
+      imageUrl: 'https://via.placeholder.com/300x200?text=MacBook+Pro',
+    },
+    {
+      serialNumber: 'IPHONE-15-256GB',
+      name: 'iPhone 15',
+      brand: 'Apple',
+      description: 'Latest iPhone with stunning camera and performance',
+      category: 'Phone',
+      price: 1099.99,
+      imageUrl: 'https://via.placeholder.com/300x200?text=iPhone+15',
+    },
+    {
+      serialNumber: 'SAMSUNG-GALAXY-S23',
+      name: 'Samsung Galaxy S23',
+      brand: 'Samsung',
+      description: 'Flagship Android phone with incredible display',
+      category: 'Phone',
+      price: 899.99,
+      imageUrl: 'https://via.placeholder.com/300x200?text=Galaxy+S23',
+    },
+    {
+      serialNumber: 'DELL-XPS-13-2023',
+      name: 'Dell XPS 13',
+      brand: 'Dell',
+      description: 'Lightweight and powerful ultrabook',
+      category: 'Laptop',
+      price: 1399.99,
+      imageUrl: 'https://via.placeholder.com/300x200?text=Dell+XPS+13',
+    },
+  ]);
+
+  console.log('✅ Products seeded!');
+  process.exit();
+}
+
+seed().catch((err) => {
+  console.error('❌ Error seeding products:', err);
+  process.exit(1);
+});
