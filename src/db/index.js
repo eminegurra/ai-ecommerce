@@ -5,7 +5,7 @@ const schema = require('./schema');
 const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',
-  password: '',
+  password: 'root',
   database: 'ai-ecommerce',
 });
 
