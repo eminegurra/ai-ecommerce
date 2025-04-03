@@ -24,34 +24,47 @@ export default function HomePage() {
 
       <main className="px-4 sm:px-8 py-16 max-w-7xl mx-auto">
         {/* 🧠 Hero Section */}
-        <section className="text-center mb-20">
+        {/* <section className="text-center mb-20">
           <h1 className="text-4xl sm:text-5xl font-bold mb-4">
-            Shop Smart. Shop with AI.
+            Find the Right Tech in Seconds
           </h1>
           <p className="text-lg text-gray-600 max-w-xl mx-auto">
-            Let Emine, your AI assistant, help you find the perfect product for your budget.
+            Our smart AI shopping buddy, helps you discover phones, laptops, and more — within your budget.
           </p>
-          <div className="mt-6 flex justify-center gap-4">
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 shadow flex items-center justify-center gap-4">
+            <img src="/images/emoji-store.png" className="w-10 h-10" alt="Store" />
             <Link href="/products">
-              <button className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700">
+              <button className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-full text-lg transition">
                 Browse Products
               </button>
             </Link>
-            <button
-              onClick={() => {
-                const chatBtn = document.querySelector('.chat-widget-button');
-                chatBtn?.click();
-                setTimeout(() => {
-                  const input = document.querySelector('.chat-widget-input');
-                  if (input) input.value = "What can I buy for €50?";
-                }, 200);
-              }}
-              className="border border-gray-300 px-6 py-3 rounded hover:bg-gray-100"
-            >
-              Try AI Assistant
-            </button>
           </div>
-        </section>
+
+        </section> */}
+
+      <section
+        className="relative text-center py-20 px-4 sm:px-8 mb-20 rounded-xl text-white"
+        style={{
+          backgroundImage: `url('/images/banner.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }}
+      >
+        <div className="bg-opacity-40 absolute inset-0 rounded-xl"></div>
+        <div className="relative z-10 max-w-2xl mx-auto">
+          <h2 className="text-4xl font-bold mb-4">Discover Your Next Favorite Gadget</h2>
+          <p className="text-lg mb-6">
+            Shop top picks curated by your AI shopping assistant.
+          </p>
+          <Link href="/products">
+            <button className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-full text-lg shadow-md transition">
+              Browse Products
+            </button>
+          </Link>
+        </div>
+      </section>
+
 
         {/* 🛍️ Featured Products */}
         <section className="mb-20">

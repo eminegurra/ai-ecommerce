@@ -42,16 +42,21 @@ export default function ChatWidget() {
           width: 60,
           height: 60,
           borderRadius: '50%',
-          background: '#0070f3',
+          background: '#4B5563', // Tailwind gray-700
           color: '#fff',
           fontSize: 26,
           border: 'none',
           cursor: 'pointer',
           zIndex: 1000,
+          boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
+          transition: 'background 0.3s',
         }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = '#374151')} // darker gray
+        onMouseLeave={(e) => (e.currentTarget.style.background = '#4B5563')} // back to base
       >
         💬
       </button>
+
 
       {/* Chat Panel */}
       <AnimatePresence>
