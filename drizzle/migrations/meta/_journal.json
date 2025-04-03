@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "5",
-      "when": 1743542251355,
-      "tag": "0000_military_anita_blake",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1743624378578,
-      "tag": "0001_silly_sway",
+      "when": 1743709981293,
+      "tag": "0000_optimal_northstar",
       "breakpoints": true
     }
   ]
