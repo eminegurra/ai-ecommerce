@@ -1,18 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FaPaperPlane } from 'react-icons/fa';
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [hasWelcomed, setHasWelcomed] = useState(false);
 
-  const sendMessage = async () => {
-    if (!input.trim()) return;
+  const sendMessage = async (messageToSend = input) => {
+    if (!messageToSend.trim()) return;
 
-    const userMessage = { role: 'user', content: input };
+    const userMessage = { role: 'user', content: messageToSend };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setLoading(true);
@@ -20,21 +22,36 @@ export default function ChatWidget() {
     const res = await fetch('/api/chatbot', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: input }),
+      body: JSON.stringify({ message: messageToSend }),
     });
 
     const data = await res.json();
-    const aiMessage = { role: 'assistant', content: data.reply || 'Something went wrong.' };
+    const aiMessage = {
+      role: 'assistant',
+      content: data.reply || 'Something went wrong.',
+    };
 
     setMessages((prev) => [...prev, aiMessage]);
     setLoading(false);
   };
 
+  // 👋 Auto-send welcome message when chat opens for the first time
+  useEffect(() => {
+    if (isOpen && !hasWelcomed) {
+      const welcome = {
+        role: 'assistant',
+        content: "Hi! What can I help you find today?",
+      };
+      setMessages((prev) => [...prev, welcome]);
+      setHasWelcomed(true);
+    }
+  }, [isOpen, hasWelcomed]);
+
   return (
     <>
       {/* Floating Chat Button */}
       <button
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={() => setIsOpen(true)}
         style={{
           position: 'fixed',
           bottom: 20,
@@ -51,12 +68,16 @@ export default function ChatWidget() {
           boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
           transition: 'background 0.3s',
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.background = '#374151')} // darker gray
-        onMouseLeave={(e) => (e.currentTarget.style.background = '#4B5563')} // back to base
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.background = '#374151')
+        }
+        onMouseLeave={(e) =>
+          (e.currentTarget.style.background = '#4B5563')
+        }
+        className="chat-widget-button"
       >
         💬
       </button>
-
 
       {/* Chat Panel */}
       <AnimatePresence>
@@ -82,7 +103,26 @@ export default function ChatWidget() {
               zIndex: 1000,
             }}
           >
-            <div style={{ flex: 1, overflowY: 'auto', paddingRight: 5 }}>
+            {/* ❌ Close button */}
+            <button
+              onClick={() => setIsOpen(false)}
+              style={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                background: 'transparent',
+                border: 'none',
+                fontSize: 18,
+                cursor: 'pointer',
+                color: '#999',
+              }}
+              aria-label="Close chat"
+            >
+              ✖
+            </button>
+
+            {/* Messages */}
+            <div style={{ flex: 1, overflowY: 'auto', paddingRight: 5, marginTop: 20 }}>
               {messages.map((msg, index) => (
                 <div
                   key={index}
@@ -112,6 +152,7 @@ export default function ChatWidget() {
               )}
             </div>
 
+            {/* Input */}
             <div style={{ display: 'flex', gap: 5 }}>
               <input
                 type="text"
@@ -125,20 +166,28 @@ export default function ChatWidget() {
                   borderRadius: 5,
                   border: '1px solid #ccc',
                 }}
+                className="chat-widget-input"
               />
-              <button
-                onClick={sendMessage}
-                disabled={loading}
-                style={{
-                  background: '#0070f3',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '8px 12px',
-                  borderRadius: 5,
-                }}
-              >
-                Send
-              </button>
+
+            <button
+              onClick={() => sendMessage()}
+              disabled={loading}
+              style={{
+                background: '#4B5563',
+                color: '#fff',
+                border: 'none',
+                padding: '8px 10px',
+                borderRadius: 5,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              aria-label="Send message"
+            >
+              <FaPaperPlane size={16} />
+            </button>
+
             </div>
           </motion.div>
         )}
