@@ -1,7 +1,8 @@
 import { OpenAI } from 'openai';
 import { db } from '@/db/index';
-import { products } from '@/db/schema';
-import { lte } from 'drizzle-orm/expressions'; // 👈 or 'drizzle-orm/mysql-core'
+import { products, brands, categories } from '@/db/schema';
+import { lte, eq } from 'drizzle-orm/expressions';
+import { and } from 'drizzle-orm';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -18,18 +19,32 @@ export async function POST(req) {
 
     if (budget) {
       const results = await db
-        .select()
+        .select({
+          id: products.id,
+          name: products.name,
+          price: products.price,
+          brandName: brands.name,
+          categoryName: categories.name,
+        })
         .from(products)
-        .where(lte(products.price, budget)); // ✅ fixed
+        .leftJoin(brands, eq(products.brandId, brands.id))
+        .leftJoin(categories, eq(products.categoryId, categories.id))
+        .where(lte(products.price, budget));
 
       if (results.length === 0) {
         prompt = `A user has €${budget}, but there are no matching products. Kindly inform them and suggest alternatives.`;
       } else {
-        productList = results.map((p) => `${p.name} - €${p.price}`).join('\n');
-        prompt = `A user has €${budget} to spend. Suggest what they can buy from the list:\n${productList}`;
+        productList = results
+          .map(
+            (p) =>
+              `${p.name} (€${p.price}) - Brand: ${p.brandName || 'N/A'}, Category: ${p.categoryName || 'N/A'}`
+          )
+          .join('\n');
+
+        prompt = `A user has €${budget} to spend. Suggest what they can buy from this list:\n${productList}`;
       }
     } else {
-      prompt = `The user said: "${message}". They didn't give a budget. Suggest they include one or offer helpful general advice.`;
+      prompt = `The user said: "${message}". They didn't provide a budget. Suggest they include one or offer helpful general advice.`;
     }
 
     const completion = await openai.chat.completions.create({
