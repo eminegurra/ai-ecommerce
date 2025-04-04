@@ -69,6 +69,18 @@ const orderItems = mysqlTable('order_items', {
 });
 
 
+const payments = mysqlTable('payments', {
+  id: int('id').primaryKey().autoincrement(),
+  orderId: int('order_id').notNull(), // FK to orders.id (manual for now)
+  stripeSessionId: varchar('stripe_session_id', { length: 255 }).notNull(),
+  stripePaymentIntentId: varchar('stripe_payment_intent_id', { length: 255 }),
+  amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+  currency: varchar('currency', { length: 10 }).default('eur'),
+  status: varchar('status', { length: 100 }).default('pending'), // e.g. succeeded, failed
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+
 module.exports = {
   users,
   products,
@@ -77,4 +89,5 @@ module.exports = {
   productAttributes,
   orders,
   orderItems,
+  payments
 };
