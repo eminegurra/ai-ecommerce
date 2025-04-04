@@ -1,4 +1,5 @@
 'use client';
+
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -11,23 +12,20 @@ export default function CheckoutPage() {
 
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-  
+  const handleStripeCheckout = async () => {
     const res = await fetch('/api/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, cart }),
     });
-  
-    if (res.ok) {
-      dispatch({ type: 'CLEAR_CART' });
-      router.push('/checkout/success');
+
+    const data = await res.json();
+    if (data?.url) {
+      window.location.href = data.url;
     } else {
-      alert('Something went wrong placing your order');
+      alert('Stripe checkout failed.');
     }
   };
-  
 
   if (cart.length === 0) {
     return (
@@ -41,7 +39,7 @@ export default function CheckoutPage() {
     <div className="max-w-3xl mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-6">🧾 Checkout</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <input
             type="text"
@@ -75,10 +73,11 @@ export default function CheckoutPage() {
         </div>
 
         <button
-          type="submit"
-          className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700"
+          type="button"
+          onClick={handleStripeCheckout}
+          className="w-full bg-black text-white py-3 rounded hover:bg-gray-800"
         >
-          Place Order
+          Pay with Stripe 💳
         </button>
       </form>
     </div>
