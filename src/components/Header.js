@@ -24,7 +24,6 @@ export default function Header({ onSearchResults }) {
             </span>
           )}
         </Link>
-        <Link href="/login">Login</Link>
       </div>
     </header>
   );
