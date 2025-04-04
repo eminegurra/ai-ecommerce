@@ -34,9 +34,10 @@ export default function CartPage() {
 
           <div className="text-right mt-6">
             <p className="text-xl font-semibold">Total: €{total}</p>
-            <button className="mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+            <Link href="/checkout" className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
               Proceed to Checkout
-            </button>
+            </Link>
+
           </div>
         </div>
       )}

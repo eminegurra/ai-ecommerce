@@ -44,6 +44,8 @@ const productAttributes = mysqlTable('product_attributes', {
 const orders = mysqlTable('orders', {
   id: int('id').primaryKey().autoincrement(),
   userId: int('user_id'), // Optional user login
+  name: varchar('name', { length: 255 }),
+  email: varchar('email', { length: 255 }),
   total: decimal('total', { precision: 10, scale: 2 }).notNull(),
   status: varchar('status', { length: 100 }).default('pending'),
   createdAt: timestamp('created_at').defaultNow(),
