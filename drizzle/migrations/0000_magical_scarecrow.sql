@@ -40,6 +40,8 @@ CREATE TABLE `product_attributes` (
 CREATE TABLE `orders` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`user_id` int,
+	`name` varchar(255),
+	`email` varchar(255),
 	`total` decimal(10,2) NOT NULL,
 	`status` varchar(100) DEFAULT 'pending',
 	`created_at` timestamp DEFAULT (now()),
@@ -53,6 +55,18 @@ CREATE TABLE `order_items` (
 	`quantity` int NOT NULL,
 	`price` decimal(10,2) NOT NULL,
 	CONSTRAINT `order_items_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `payments` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`order_id` int NOT NULL,
+	`stripe_session_id` varchar(255) NOT NULL,
+	`stripe_payment_intent_id` varchar(255),
+	`amount` decimal(10,2) NOT NULL,
+	`currency` varchar(10) DEFAULT 'eur',
+	`status` varchar(100) DEFAULT 'pending',
+	`created_at` timestamp DEFAULT (now()),
+	CONSTRAINT `payments_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
 ALTER TABLE `order_items` ADD CONSTRAINT `order_items_order_id_orders_id_fk` FOREIGN KEY (`order_id`) REFERENCES `orders`(`id`) ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
