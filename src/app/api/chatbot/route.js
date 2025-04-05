@@ -1,62 +1,79 @@
+// src/app/api/chatbot/route.js
 import { OpenAI } from 'openai';
-import { db } from '@/db/index';
-import { products, brands, categories } from '@/db/schema';
-import { lte, eq } from 'drizzle-orm/expressions';
-import { and } from 'drizzle-orm';
+import { detectIntent } from './intents';
+import {
+  generateInitialReply,
+  generateFollowupReply,
+  generateComparisonReply,
+  generateCheaperAlternatives,
+} from './replyGenerators';
+import {
+  getProductsByBudget,
+  getProductsByKeyword,
+  getProductsByFeature,
+} from './productQueries';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const sessionContext = new Map();
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(req) {
   try {
-    const { message } = await req.json();
-    const match = message.match(/(\d+(\.\d+)?)/);
-    const budget = match ? parseFloat(match[0]) : null;
+    const { message, sessionId } = await req.json();
+    const previousResults = sessionContext.get(sessionId) || [];
+    const { intent, entity } = detectIntent(message, previousResults);
 
-    let productList = '';
-    let prompt = '';
+    switch (intent) {
+      case 'greeting':
+        return Response.json({
+          reply: "Hi! 👋 I can help you find laptops, phones, and more. You can ask things like:\n- Show me laptops under €1000\n- I need a tablet with 128GB\n- Do you have any Samsung phones?\nWhat would you like to find today?",
+        });
 
-    if (budget) {
-      const results = await db
-        .select({
-          id: products.id,
-          name: products.name,
-          price: products.price,
-          brandName: brands.name,
-          categoryName: categories.name,
-        })
-        .from(products)
-        .leftJoin(brands, eq(products.brandId, brands.id))
-        .leftJoin(categories, eq(products.categoryId, categories.id))
-        .where(lte(products.price, budget));
+      case 'select':
+        return Response.json({ reply: await generateFollowupReply(entity, previousResults) });
 
-      if (results.length === 0) {
-        prompt = `A user has €${budget}, but there are no matching products. Kindly inform them and suggest alternatives.`;
-      } else {
-        productList = results
-          .map(
-            (p) =>
-              `${p.name} (€${p.price}) - Brand: ${p.brandName || 'N/A'}, Category: ${p.categoryName || 'N/A'}`
-          )
-          .join('\n');
+      case 'compare':
+        return Response.json({ reply: await generateComparisonReply(entity, previousResults) });
 
-        prompt = `A user has €${budget} to spend. Suggest what they can buy from this list:\n${productList}`;
+      case 'cheaper':
+        return Response.json({ reply: await generateCheaperAlternatives(previousResults) });
+
+      case 'feature': {
+        const { list, reply } = await getProductsByFeature(entity);
+        sessionContext.set(sessionId, list);
+        return Response.json({ reply });
       }
-    } else {
-      prompt = `The user said: "${message}". They didn't provide a budget. Suggest they include one or offer helpful general advice.`;
+
+      default: {
+        const budget = extractBudget(message);
+        const results = budget
+          ? await getProductsByBudget(budget)
+          : await getProductsByKeyword(message);
+
+        sessionContext.set(sessionId, results);
+
+        if (results.length === 0) {
+          const fallbackPrompt = `The user said: "${message}". There are no matching results from the database. Respond with a helpful answer or suggestions for what to do next.`;
+
+          const completion = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [{ role: 'user', content: fallbackPrompt }],
+          });
+
+          const reply = completion.choices?.[0]?.message?.content || "Sorry, no results and I couldn't generate a suggestion.";
+          return Response.json({ reply });
+        }
+
+        const reply = await generateInitialReply(message, budget, results);
+        return Response.json({ reply });
+      }
     }
-
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [{ role: 'user', content: prompt }],
-    });
-
-    const reply = completion.choices?.[0]?.message?.content || "Couldn't generate a reply.";
-
-    return Response.json({ reply });
   } catch (error) {
     console.error('Chatbot error:', error);
     return Response.json({ reply: 'Oops! Server error.' }, { status: 500 });
   }
+}
+
+function extractBudget(text) {
+  const match = text.match(/(\d+(\.\d+)?)/);
+  return match ? parseFloat(match[0]) : null;
 }

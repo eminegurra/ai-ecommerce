@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaPaperPlane } from 'react-icons/fa';
 
@@ -10,6 +10,7 @@ export default function ChatWidget() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasWelcomed, setHasWelcomed] = useState(false);
+  const chatContainerRef = useRef(null); // for scrolling
 
   const sendMessage = async (messageToSend = input) => {
     if (!messageToSend.trim()) return;
@@ -19,37 +20,54 @@ export default function ChatWidget() {
     setInput('');
     setLoading(true);
 
-    const res = await fetch('/api/chatbot', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: messageToSend }),
-    });
+    try {
+      const res = await fetch('/api/chatbot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: messageToSend }),
+      });
 
-    const data = await res.json();
-    const aiMessage = {
-      role: 'assistant',
-      content: data.reply || 'Something went wrong.',
-    };
+      const data = await res.json();
+      const aiMessage = {
+        role: 'assistant',
+        content: data.reply || 'Something went wrong.',
+      };
 
-    setMessages((prev) => [...prev, aiMessage]);
-    setLoading(false);
+      setMessages((prev) => [...prev, aiMessage]);
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: 'Failed to fetch AI response.' },
+      ]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // 👋 Auto-send welcome message when chat opens for the first time
+  // Auto-send welcome message
   useEffect(() => {
     if (isOpen && !hasWelcomed) {
-      const welcome = {
-        role: 'assistant',
-        content: "Hi! What can I help you find today?",
-      };
-      setMessages((prev) => [...prev, welcome]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: 'Hi! What can I help you find today?',
+        },
+      ]);
       setHasWelcomed(true);
     }
   }, [isOpen, hasWelcomed]);
 
+  // Auto-scroll to bottom on message update
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   return (
     <>
-      {/* Floating Chat Button */}
+      {/* Floating Button */}
       <button
         onClick={() => setIsOpen(true)}
         style={{
@@ -59,22 +77,17 @@ export default function ChatWidget() {
           width: 60,
           height: 60,
           borderRadius: '50%',
-          background: '#4B5563', // Tailwind gray-700
+          background: '#4B5563',
           color: '#fff',
           fontSize: 26,
           border: 'none',
           cursor: 'pointer',
           zIndex: 1000,
           boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
-          transition: 'background 0.3s',
         }}
-        onMouseEnter={(e) =>
-          (e.currentTarget.style.background = '#374151')
-        }
-        onMouseLeave={(e) =>
-          (e.currentTarget.style.background = '#4B5563')
-        }
-        className="chat-widget-button"
+        onMouseEnter={(e) => (e.currentTarget.style.background = '#374151')}
+        onMouseLeave={(e) => (e.currentTarget.style.background = '#4B5563')}
+        aria-label="Open chat"
       >
         💬
       </button>
@@ -91,8 +104,8 @@ export default function ChatWidget() {
               position: 'fixed',
               bottom: 90,
               right: 20,
-              width: 320,
-              height: 400,
+              width: 400,
+              height: 500,
               background: '#fff',
               border: '1px solid #ddd',
               borderRadius: 10,
@@ -103,7 +116,7 @@ export default function ChatWidget() {
               zIndex: 1000,
             }}
           >
-            {/* ❌ Close button */}
+            {/* Close Button */}
             <button
               onClick={() => setIsOpen(false)}
               style={{
@@ -122,13 +135,21 @@ export default function ChatWidget() {
             </button>
 
             {/* Messages */}
-            <div style={{ flex: 1, overflowY: 'auto', paddingRight: 5, marginTop: 20 }}>
+            <div
+              ref={chatContainerRef}
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                paddingRight: 5,
+                marginTop: 30,
+              }}
+            >
               {messages.map((msg, index) => (
                 <div
                   key={index}
                   style={{
                     textAlign: msg.role === 'user' ? 'right' : 'left',
-                    marginBottom: 8,
+                    marginBottom: 10,
                   }}
                 >
                   <span
@@ -136,15 +157,17 @@ export default function ChatWidget() {
                       display: 'inline-block',
                       padding: '8px 12px',
                       borderRadius: 12,
-                      background: msg.role === 'user' ? '#0070f3' : '#eee',
+                      background: msg.role === 'user' ? '#0070f3' : '#f1f1f1',
                       color: msg.role === 'user' ? '#fff' : '#000',
                       maxWidth: '80%',
+                      wordBreak: 'break-word',
                     }}
                   >
                     {msg.content}
                   </span>
                 </div>
               ))}
+
               {loading && (
                 <div style={{ fontStyle: 'italic', color: '#999' }}>
                   AI is typing...
@@ -153,12 +176,12 @@ export default function ChatWidget() {
             </div>
 
             {/* Input */}
-            <div style={{ display: 'flex', gap: 5 }}>
+            <div style={{ display: 'flex', gap: 5, marginTop: 10 }}>
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Type your question..."
+                placeholder="Type your message..."
                 onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
                 style={{
                   flex: 1,
@@ -166,28 +189,25 @@ export default function ChatWidget() {
                   borderRadius: 5,
                   border: '1px solid #ccc',
                 }}
-                className="chat-widget-input"
               />
-
-            <button
-              onClick={() => sendMessage()}
-              disabled={loading}
-              style={{
-                background: '#4B5563',
-                color: '#fff',
-                border: 'none',
-                padding: '8px 10px',
-                borderRadius: 5,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              aria-label="Send message"
-            >
-              <FaPaperPlane size={16} />
-            </button>
-
+              <button
+                onClick={() => sendMessage()}
+                disabled={loading}
+                style={{
+                  background: '#4B5563',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '8px 10px',
+                  borderRadius: 5,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                aria-label="Send message"
+              >
+                <FaPaperPlane size={16} />
+              </button>
             </div>
           </motion.div>
         )}

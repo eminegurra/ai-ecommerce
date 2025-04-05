@@ -23,26 +23,7 @@ export default function HomePage() {
       <Header onSearchResults={setProducts} />
 
       <main className="px-4 sm:px-8 py-16 max-w-7xl mx-auto">
-        {/* 🧠 Hero Section */}
-        {/* <section className="text-center mb-20">
-          <h1 className="text-4xl sm:text-5xl font-bold mb-4">
-            Find the Right Tech in Seconds
-          </h1>
-          <p className="text-lg text-gray-600 max-w-xl mx-auto">
-            Our smart AI shopping buddy, helps you discover phones, laptops, and more — within your budget.
-          </p>
-
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 shadow flex items-center justify-center gap-4">
-            <img src="/images/emoji-store.png" className="w-10 h-10" alt="Store" />
-            <Link href="/products">
-              <button className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-full text-lg transition">
-                Browse Products
-              </button>
-            </Link>
-          </div>
-
-        </section> */}
-
+    
       <section
         className="relative text-center py-20 px-4 sm:px-8 mb-20 rounded-xl text-white"
         style={{

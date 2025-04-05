@@ -45,7 +45,7 @@ export async function POST(req) {
       name,
       email,
       total,
-      status: 'unpaid',
+      status: 'paid',
     });
 
     const [orderIdRow] = await db.execute(`SELECT LAST_INSERT_ID() as id`);
@@ -65,7 +65,7 @@ export async function POST(req) {
       stripeSessionId: session.id,
       stripePaymentIntentId: session.payment_intent ?? null,
       amount: total,
-      status: 'pending',
+      status: 'paid',
     });
 
     return NextResponse.json({ url: session.url });
