@@ -38,7 +38,7 @@ If the user asks for a short comparison (e.g., "in two sentences"), respond brie
     const reply = completion.choices?.[0]?.message?.content || "Couldn't generate a response.";
     return Response.json({ reply });
   } catch (err) {
-    console.error('❌ Chatbot error:', err);
+    console.error('Chatbot error:', err);
     return Response.json({ reply: 'Something went wrong while generating a reply.' }, { status: 500 });
   }
 }

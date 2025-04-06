@@ -8,58 +8,75 @@ import CategoryBrandFilter from '@/components/CategoryBrandFilter';
 
 
 export default function HomePage() {
-  const [products, setProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
+  const [visibleCount, setVisibleCount] = useState(4);
 
-  // Load initial featured products (top 4)
   useEffect(() => {
     fetch('/api/products')
       .then((res) => res.json())
-      .then((data) => setProducts(data.slice(0, 4)));
+      .then((data) => setAllProducts(data));
   }, []);
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => prev + 4); // Load 6 more
+  };
 
   return (
     <>
-      {/* Header handles search and passes results to setProducts */}
-      <Header onSearchResults={setProducts} />
+      <Header onSearchResults={setAllProducts} />
 
       <main className="px-4 sm:px-8 py-16 max-w-7xl mx-auto">
-    
-      <section
-        className="relative text-center py-20 px-4 sm:px-8 mb-20 rounded-xl text-white"
-        style={{
-          backgroundImage: `url('/images/banner.jpg')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      >
-        <div className="bg-opacity-40 absolute inset-0 rounded-xl"></div>
-        <div className="relative z-10 max-w-2xl mx-auto">
-          <h2 className="text-4xl font-bold mb-4">Discover Your Next Favorite Gadget</h2>
-          <p className="text-lg mb-6">
-            Shop top picks curated by your AI shopping assistant.
-          </p>
-          <Link href="/products">
-            <button className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-full text-lg shadow-md transition">
-              Browse Products
-            </button>
-          </Link>
-        </div>
-      </section>
+
+        {/* Banner section remains the same */}
+        <section
+          className="relative text-center py-20 px-4 sm:px-8 mb-20 rounded-xl text-white"
+          style={{
+            backgroundImage: `url('/images/banner.jpg')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          <div className="bg-opacity-40 absolute inset-0 rounded-xl"></div>
+          <div className="relative z-10 max-w-2xl mx-auto">
+            <h2 className="text-4xl font-bold mb-4">Discover Your Next Favorite Gadget</h2>
+            <p className="text-lg mb-6">
+              Shop top picks curated by your AI shopping assistant.
+            </p>
+            <Link href="/products">
+              <button className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-full text-lg shadow-md transition">
+                Browse Products
+              </button>
+            </Link>
+          </div>
+        </section>
 
 
         {/* 🛍️ Featured Products */}
         <section className="mb-20">
           <h2 className="text-2xl font-bold mb-6 text-center">Featured Products</h2>
-          <CategoryBrandFilter onFilter={setProducts} />
+          <CategoryBrandFilter onFilter={setAllProducts} />
+
           <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {products.length > 0 ? (
-              products.map((product) => (
+            {allProducts.length > 0 ? (
+              allProducts.slice(0, visibleCount).map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))
             ) : (
               <p className="text-center text-gray-500 col-span-full">No products found.</p>
             )}
           </div>
+
+          {/* Load More Button */}
+          {visibleCount < allProducts.length && (
+            <div className="text-center mt-8">
+              <button
+                onClick={handleLoadMore}
+                className="bg-gray-500 hover:bg-blue-600 text-white px-6 py-3 rounded-full text-lg transition"
+              >
+                Load More
+              </button>
+            </div>
+          )}
         </section>
 
         {/* 📦 How It Works */}
