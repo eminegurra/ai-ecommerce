@@ -1,52 +1,63 @@
 import stringSimilarity from 'string-similarity';
 
 export function detectIntent(message, previousResults = []) {
-  const lower = String(message || '').toLowerCase().trim(); // ensure it's a string
+  const lower = String(message || '').toLowerCase().trim();
 
+  // 1. Greetings
   const greetings = ['hi', 'hello', 'hey', 'good morning', 'good afternoon'];
   if (greetings.includes(lower)) {
     return { intent: 'greeting' };
   }
 
+  // 2. Confirmation / follow-up
   if (["yes", "sure", "ok", "okay"].includes(lower)) {
     return { intent: "select", entity: 1 };
   }
 
+  // 3. User selects item by number
   if (/^\d+$/.test(lower)) {
     return { intent: "select", entity: parseInt(lower) };
   }
 
-  if (lower.includes("compare with")) {
-    const productName = lower.split("compare with")[1].trim();
+  // 4. Comparison intent using more flexible wording
+  const compareRegex = /(compare|vs|versus|better than)\s+(.*)/;
+  const compareMatch = lower.match(compareRegex);
+  if (compareMatch) {
+    const productName = compareMatch[2]?.trim();
     return { intent: "compare", entity: productName };
   }
 
-  if (lower.includes("cheaper") || lower.includes("less expensive")) {
+  // 5. Compare by detecting 2 product names from previousResults
+  if (previousResults.length > 0) {
+    const names = previousResults.map(p => String(p.name || '').toLowerCase());
+    const matchedNames = names.filter(name => lower.includes(name));
+
+    if (matchedNames.length === 2) {
+      // Assume first is selected, second is comparison
+      return { intent: "compare", entity: matchedNames[1] };
+    }
+  }
+
+  // 6. Cheaper alternatives
+  if (lower.includes("cheaper") || lower.includes("less expensive") || lower.includes("more affordable")) {
     return { intent: "cheaper" };
   }
 
-  // if (lower.includes("storage") || lower.includes("gb")) {
-  //   return { intent: "feature", entity: message };
-  // }
+  // 7. Feature search
   const featureKeywords = [
     "storage", "gb", "amoled", "retina", "ip68", "backlit", "scanner",
-  
-    // From keys
     "ram", "processor", "camera", "display", "weight", "frame", "keyboard", 
     "security", "chip", "battery", "s pen", "water resistance",
-  
-    // From values
     "m1 pro", "16gb", "256gb", "512gb", "48mp", "6.1-inch amoled", "1.2kg",
     "titanium", "fingerprint scanner", "google tensor g3", "4300mah", 
     "10.9-inch liquid retina", "included"
   ];
-  
+
   if (featureKeywords.some(word => lower.includes(word))) {
     return { intent: "feature", entity: message };
   }
 
-
-  // ✅ Fuzzy match product names
+  // 8. Fuzzy match to previous results for "select" by name
   if (previousResults.length > 0) {
     const names = previousResults.map(p => String(p.name || '').toLowerCase());
     const { bestMatch } = stringSimilarity.findBestMatch(lower, names);
@@ -61,5 +72,6 @@ export function detectIntent(message, previousResults = []) {
     }
   }
 
+  // 9. Unknown fallback
   return { intent: "unknown" };
 }

@@ -1,6 +1,10 @@
-// src/app/api/chatbot/route.js
 import { OpenAI } from 'openai';
-import { detectIntent } from './intents';
+import {
+  getAllProductNames,
+  getAllBrandNames,
+  getAllCategoryNames,
+} from './extractKeywords';
+import { buildSystemPrompt } from './promptBuilder';
 import {
   generateInitialReply,
   generateFollowupReply,
@@ -8,40 +12,74 @@ import {
   generateCheaperAlternatives,
 } from './replyGenerators';
 import {
-  getProductsByBudget,
   getProductsByKeyword,
+  getProductsByBudget,
   getProductsByFeature,
 } from './productQueries';
 
-const sessionContext = new Map();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const sessionContext = new Map();
 
 export async function POST(req) {
   try {
     const { message, sessionId } = await req.json();
     const previousResults = sessionContext.get(sessionId) || [];
-    const { intent, entity } = detectIntent(message, previousResults);
+
+    const [productsList, brandsList, categoriesList] = await Promise.all([
+      getAllProductNames(),
+      getAllBrandNames(),
+      getAllCategoryNames(),
+    ]);
+
+    const systemPrompt = buildSystemPrompt(productsList, brandsList, categoriesList);
+
+    const gpt = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: message },
+      ],
+    });
+
+    const { intent, products: mentionedProducts = [], feature = message } = JSON.parse(
+      gpt.choices[0].message.content
+    );
 
     switch (intent) {
       case 'greeting':
         return Response.json({
-          reply: "Hi! 👋 I can help you find laptops, phones, and more. You can ask things like:\n- Show me laptops under €1000\n- I need a tablet with 128GB\n- Do you have any Samsung phones?\nWhat would you like to find today?",
+          reply: "Hi! 👋 I can help you find phones, laptops, tablets, and more. What are you looking for today?",
         });
 
-      case 'select':
-        return Response.json({ reply: await generateFollowupReply(entity, previousResults) });
+      case 'compare': {
+        if (mentionedProducts.length < 2) {
+          return Response.json({ reply: "Please mention two products you'd like to compare." });
+        }
 
-      case 'compare':
-        return Response.json({ reply: await generateComparisonReply(entity, previousResults) });
+        const allResults = await getProductsByKeyword(mentionedProducts.join(' '));
+        const matched = mentionedProducts.map(name =>
+          allResults.find(p => p.name.toLowerCase().includes(name.toLowerCase()))
+        );
+
+        if (matched.some(m => !m)) {
+          return Response.json({ reply: `Couldn't find one of: ${mentionedProducts.join(', ')}` });
+        }
+
+        sessionContext.set(sessionId, matched);
+        return Response.json({ reply: await generateComparisonReply(mentionedProducts[1], matched) });
+      }
 
       case 'cheaper':
         return Response.json({ reply: await generateCheaperAlternatives(previousResults) });
 
       case 'feature': {
-        const { list, reply } = await getProductsByFeature(entity);
+        const { list, reply } = await getProductsByFeature(feature);
         sessionContext.set(sessionId, list);
         return Response.json({ reply });
       }
+
+      case 'select':
+        return Response.json({ reply: await generateFollowupReply(mentionedProducts[0], previousResults) });
 
       default: {
         const budget = extractBudget(message);
@@ -52,24 +90,22 @@ export async function POST(req) {
         sessionContext.set(sessionId, results);
 
         if (results.length === 0) {
-          const fallbackPrompt = `The user said: "${message}". There are no matching results from the database. Respond with a helpful answer or suggestions for what to do next.`;
-
-          const completion = await openai.chat.completions.create({
+          const fallback = await openai.chat.completions.create({
             model: 'gpt-4o',
-            messages: [{ role: 'user', content: fallbackPrompt }],
+            messages: [
+              { role: 'user', content: `The user said: "${message}". There are no matching products. Suggest something helpful.` },
+            ],
           });
-
-          const reply = completion.choices?.[0]?.message?.content || "Sorry, no results and I couldn't generate a suggestion.";
-          return Response.json({ reply });
+          return Response.json({ reply: fallback.choices[0].message.content });
         }
 
         const reply = await generateInitialReply(message, budget, results);
         return Response.json({ reply });
       }
     }
-  } catch (error) {
-    console.error('Chatbot error:', error);
-    return Response.json({ reply: 'Oops! Server error.' }, { status: 500 });
+  } catch (err) {
+    console.error('❌ Chatbot error:', err);
+    return Response.json({ reply: 'Oops! Something went wrong.' }, { status: 500 });
   }
 }
 
